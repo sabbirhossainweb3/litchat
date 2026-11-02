@@ -1,2 +1,45 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 :root{font-family:'DM Sans',sans-serif;color:#f4f2ff;background:#090914;font-synthesis:none}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#24204a 0,transparent 45%),#090914;min-height:100vh}button,input{font:inherit}button{cursor:pointer;border:0}button:disabled{opacity:.45;cursor:not-allowed}.app{max-width:1200px;margin:auto;padding:0 28px}header{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff12;gap:20px}.brand{display:flex;align-items:center;gap:10px;position:relative}.logo{background:linear-gradient(135deg,#a78bfa,#7c3aed);width:36px;height:36px;border-radius:11px;display:grid;place-items:center}.brand>span{font:700 21px 'Space Grotesk';letter-spacing:-1px}.accent{color:#b39aff}.brand small{position:absolute;left:47px;top:25px;font-size:8px;letter-spacing:1.5px;color:#88869d;white-space:nowrap}nav{display:flex;gap:5px}nav button{display:flex;align-items:center;gap:8px;padding:11px 14px;background:transparent;color:#9895aa;border-radius:10px;font-size:13px}nav svg{width:16px}nav button.active,nav button:hover{background:#ffffff0c;color:#f5f2ff}.wallet{display:flex;align-items:center;gap:8px;background:#f1eaff;color:#20163d;border-radius:10px;padding:11px 15px;font-weight:700;font-size:12px;white-space:nowrap}.hero{padding:74px 0 36px;text-align:center}.eyebrow{font-size:10px;font-weight:700;letter-spacing:2px;color:#a99bd7;display:flex;align-items:center;gap:8px}.hero .eyebrow{justify-content:center}.pulse{width:6px;height:6px;background:#a78bfa;border-radius:50%;box-shadow:0 0 12px #a78bfa}.hero h1{font:700 clamp(42px,6vw,72px)/1.04 'Space Grotesk';letter-spacing:-3px;margin:20px 0}.hero h1 em{font-style:normal;background:linear-gradient(90deg,#b9a0ff,#8d67ee);color:transparent;background-clip:text}.hero>p{color:#9b98ad;font-size:15px}.hero-actions{display:flex;justify-content:center;gap:10px;margin:26px 0 40px}.primary,.ghost{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 17px;border-radius:10px;font-size:12px;font-weight:700}.primary{background:linear-gradient(120deg,#a78bfa,#8055e8);color:#fff;box-shadow:0 7px 28px #7447d833}.ghost{background:#ffffff08;border:1px solid #ffffff1c;color:#ded9ef}.stats{display:flex;justify-content:center;gap:65px}.stats div{display:flex;flex-direction:column;gap:3px}.stats b{font:600 24px 'Space Grotesk'}.stats span{font-size:10px;color:#858198}.notice{font-size:11px;color:#b5a4dc;background:#a78bfa0b;border:1px solid #a78bfa20;padding:12px 15px;border-radius:9px;margin:0 auto 45px;max-width:780px;text-align:center}main{padding-bottom:80px}.section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px}.section-head h2{font:600 30px 'Space Grotesk';letter-spacing:-1px;margin:7px 0 0}.refresh{display:flex;gap:7px;align-items:center;background:transparent;color:#9995ad;font-size:11px}.create-box{padding:22px;background:#11111f;border:1px solid #ffffff12;border-radius:15px;margin-bottom:25px}.box-title{display:flex;align-items:center;gap:10px;margin-bottom:16px}.box-title svg{color:#b49aff;width:18px}.box-title b{font-size:13px}.box-title span{margin-left:auto;font-size:9px;letter-spacing:1px;color:#a99bd7;background:#a78bfa17;padding:5px 8px;border-radius:5px}.fields{display:flex;gap:10px}.fields input,.studio input{background:#090914;border:1px solid #ffffff18;border-radius:9px;color:#eee;padding:12px 13px;min-width:0;outline:none;font-size:12px}.fields input:first-child{flex:1}.fields input:nth-child(2){flex:2}.fields input:focus,.studio input:focus{border-color:#9a78ef}.fields .primary{white-space:nowrap}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.tile{background:#11111e;border:1px solid #ffffff10;border-radius:14px;padding:19px;min-width:0}.tile-icon{width:40px;height:40px;display:grid;place-items:center;background:#a78bfa17;color:#b7a0fa;border-radius:11px}.tile h3{font:600 17px 'Space Grotesk';margin:17px 0 7px;overflow-wrap:anywhere}.tile p{color:#8e8ba1;font-size:11px;min-height:30px;line-height:1.6}.tile-foot{border-top:1px solid #ffffff12;padding-top:13px;margin-top:17px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#a9a5b9;font-size:10px}.tile-foot button{background:#a78bfa1c;color:#c7b5ff;border:1px solid #a78bfa25;padding:8px 11px;border-radius:7px;font-weight:700;font-size:10px}.empty{border:1px dashed #ffffff20;padding:45px;text-align:center;color:#8e8ba1;border-radius:13px;font-size:13px}.studio{max-width:600px;margin:0 auto}.studio label{display:block;font-size:11px;color:#aaa6bb;margin:14px 0 7px}.studio input{width:100%}.studio .hint{font-size:10px;color:#8d899f;line-height:1.6;margin:12px 0 17px}.studio>.primary{width:100%}.art{height:170px;background:linear-gradient(135deg,#1a1630,#0c1420);border-radius:9px;display:grid;place-items:center;overflow:hidden;color:#a78bfa}.art svg{width:36px;height:36px}.art img{width:100%;height:100%;object-fit:cover}.nft{padding:12px}.nft h3{margin:12px 4px 3px}.nft p{margin:0 4px;min-height:20px}.nft .tile-foot{margin:12px 4px 2px}.price-input{width:95px;background:#090914;border:1px solid #ffffff1b;color:white;border-radius:6px;padding:7px;font-size:10px}.cancel{background:#3a1c28!important;color:#f1a0bb!important}footer{border-top:1px solid #ffffff12;display:flex;align-items:center;justify-content:space-between;padding:22px 0;color:#777489;font-size:10px}.mini .logo{width:26px;height:26px;border-radius:8px}.mini .logo svg{width:15px}.mini>span{font-size:16px}footer a{display:flex;gap:5px;align-items:center;color:#aaa1c7;text-decoration:none}@media(max-width:800px){header{height:auto;flex-wrap:wrap;padding:15px 0}nav{order:3;width:100%;overflow:auto}nav button{flex:1;justify-content:center;white-space:nowrap}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding-top:55px}.stats{gap:35px}}@media(max-width:560px){.app{padding:0 15px}.cards{grid-template-columns:1fr}.fields{flex-direction:column}.hero h1{letter-spacing:-2px}.stats{gap:20px}.stats b{font-size:20px}.wallet{padding:9px 11px}.section-head h2{font-size:25px}footer>span{display:none}}
+
+/* NFT Studio local image picker + preview */
+.studio .file-input{
+  display:block;
+  width:100%;
+  padding:10px;
+  background:#090914;
+  border:1px dashed #a78bfa66;
+  border-radius:9px;
+  color:#c9c3dc;
+  font-size:12px;
+}
+.studio .file-input::file-selector-button{
+  margin-right:12px;
+  border:0;
+  border-radius:7px;
+  padding:9px 12px;
+  background:#a78bfa20;
+  color:#d8caff;
+  font:600 11px 'DM Sans',sans-serif;
+  cursor:pointer;
+}
+.image-preview{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:12px;
+  padding:10px;
+  border:1px solid #ffffff18;
+  border-radius:10px;
+  background:#090914;
+  min-width:0;
+}
+.image-preview img{
+  width:76px;
+  height:76px;
+  object-fit:cover;
+  border-radius:8px;
+  border:1px solid #ffffff18;
+}
+.image-preview div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.image-preview b{font-size:11px;color:#e8e2f8;overflow-wrap:anywhere}
+.image-preview span{font-size:10px;color:#89849d}

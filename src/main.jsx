@@ -20,7 +20,7 @@ function App(){
  const [tab,setTab]=useState('Communities'),[communities,setCommunities]=useState([]),[nfts,setNfts]=useState([]),[listings,setListings]=useState([]);
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState('Connect MetaMask to use LitChat on LitVM LiteForge.');
  const [cName,setCName]=useState(''),[cDesc,setCDesc]=useState('');
- const [nName,setNName]=useState(''),[nUri,setNUri]=useState('');
+ const [nName,setNName]=useState(''),[nUri,setNUri]=useState(''),[imagePreview,setImagePreview]=useState(''),[imageFile,setImageFile]=useState(null);
  const [price,setPrice]=useState({});
  async function connect(){
   try{
@@ -48,7 +48,20 @@ function App(){
  async function tx(action){try{setBusy(true);setNotice('Please confirm the transaction in MetaMask…');await action();setNotice('Transaction confirmed!');await load();}catch(e){setNotice(e.shortMessage||e.reason||e.message||'Transaction failed');}finally{setBusy(false)}}
  const create=()=>tx(async()=>{if(!cName.trim())throw Error('Enter a community name');await (await contract.createCommunity(cName,cDesc)).wait();setCName('');setCDesc('');});
  const join=id=>tx(async()=>await (await contract.joinCommunity(id)).wait());
- const mint=()=>tx(async()=>{if(!nName.trim()||!nUri.trim())throw Error('Enter NFT name and image/metadata URL');await (await contract.mintNFT(nName,nUri)).wait();setNName('');setNUri('');});
+ const chooseImage=e=>{
+  const file=e.target.files?.[0];
+  if(!file)return;
+  if(!file.type.startsWith('image/')){setNotice('Please select a valid image file.');return;}
+  setImageFile(file);
+  const reader=new FileReader();
+  reader.onload=()=>setImagePreview(String(reader.result||''));
+  reader.readAsDataURL(file);
+};
+ const mint=()=>tx(async()=>{
+  if(!nName.trim()||!nUri.trim())throw Error('Enter NFT name and a public image/IPFS URI');
+  await (await contract.mintNFT(nName,nUri)).wait();
+  setNName('');setNUri('');setImagePreview('');setImageFile(null);
+});
  const list=id=>tx(async()=>{if(!price[id]||Number(price[id])<=0)throw Error('Enter a price in zkLTC');await (await contract.listNFT(id,ethers.parseEther(price[id]))).wait();});
  const buy=id=>tx(async()=>{let l=listings.find(x=>x.id===id);await (await contract.buyNFT(id,{value:l.price})).wait();});
  const cancel=id=>tx(async()=>await (await contract.cancelListing(id)).wait());
@@ -57,7 +70,7 @@ function App(){
  <div className="notice">{notice}</div>
  <main><div className="section-head"><div><div className="eyebrow">EXPLORE LITCHAT</div><h2>{tab}</h2></div><button className="refresh" onClick={load}><RefreshCw size={15}/> Refresh</button></div>
  {tab==='Communities'&&<><div className="create-box"><div className="box-title"><Plus/><b>Create a community</b><span>ON-CHAIN</span></div><div className="fields"><input value={cName} onChange={e=>setCName(e.target.value)} placeholder="Community name"/><input value={cDesc} onChange={e=>setCDesc(e.target.value)} placeholder="Short description (optional)"/><button className="primary" disabled={!contract||busy} onClick={create}>Create <ArrowUpRight size={15}/></button></div></div><div className="cards">{communities.map(c=><article className="tile" key={c.id}><div className="tile-icon"><Users/></div><h3>{c.name}</h3><p>{c.description||'A community on LitChat.'}</p><div className="tile-foot"><span>{c.members} members</span><button onClick={()=>join(c.id)} disabled={!contract||busy}>Join <ArrowUpRight size={14}/></button></div></article>)}</div>{!communities.length&&<div className="empty">No communities yet. Be the first to create one ✦</div>}</>}
- {tab==='NFT Studio'&&<div className="create-box studio"><div className="box-title"><ImagePlus/><b>Mint your collectible</b><span>TESTNET</span></div><label>NFT name</label><input value={nName} onChange={e=>setNName(e.target.value)} placeholder="e.g. LitVM Genesis #01"/><label>Image or metadata URL</label><input value={nUri} onChange={e=>setNUri(e.target.value)} placeholder="https://... or ipfs://..."/><p className="hint">Upload your artwork to IPFS first, then paste its URI. This MVP stores the URI on-chain.</p><button className="primary" disabled={!contract||busy} onClick={mint}>Mint NFT <Plus size={16}/></button></div>}
+ {tab==='NFT Studio'&&<div className="create-box studio"><div className="box-title"><ImagePlus/><b>Mint your collectible</b><span>TESTNET</span></div><label>NFT name</label><input value={nName} onChange={e=>setNName(e.target.value)} placeholder="e.g. LitVM Genesis #01"/><label>Choose image from phone or computer</label><input className="file-input" type="file" accept="image/*" onChange={chooseImage}/>{imagePreview&&<div className="image-preview"><img src={imagePreview} alt="Selected NFT artwork preview"/><div><b>{imageFile?.name||'Selected image'}</b><span>{imageFile?`${(imageFile.size/1024).toFixed(0)} KB`:''}</span></div></div>}<label>Public image or IPFS URI</label><input value={nUri} onChange={e=>setNUri(e.target.value)} placeholder="https://... or ipfs://..."/><p className="hint">Preview your selected image here. To show it to everyone in the marketplace, upload it to IPFS or another public image host and paste its public URI above. This app does not upload files to IPFS itself.</p><button className="primary" disabled={!contract||busy} onClick={mint}>Mint NFT <Plus size={16}/></button></div>}
  {tab==='Marketplace'&&<div className="cards">{listings.map(l=>{let n=nfts.find(x=>x.id===l.nftId);return <article className="tile nft" key={l.id}><div className="art">{n?.uri?<img src={n.uri} alt={n.name} onError={e=>e.currentTarget.style.display='none'}/>:<ImagePlus/>}</div><h3>{n?.name||`Collectible #${l.nftId}`}</h3><p>Seller {short(l.seller)}</p><div className="tile-foot"><b>{ethers.formatEther(l.price)} zkLTC</b><button disabled={!contract||busy||l.seller.toLowerCase()===account.toLowerCase()} onClick={()=>buy(l.id)}>Buy</button>{l.seller.toLowerCase()===account.toLowerCase()&&<button className="cancel" onClick={()=>cancel(l.id)}>Cancel</button>}</div></article>})}</div>}
  {tab==='Marketplace'&&!listings.length&&<div className="empty">Nothing listed yet. Mint an NFT, then list it for sale.</div>}
  {tab!=='Marketplace'&&tab!=='Communities'&&<div className="cards">{nfts.map(n=><article className="tile nft" key={n.id}><div className="art">{n.uri?<img src={n.uri} alt={n.name}/>:<ImagePlus/>}</div><h3>{n.name}</h3><p>Creator {short(n.creator)}</p><div className="tile-foot"><input className="price-input" placeholder="Price zkLTC" value={price[n.id]||''} onChange={e=>setPrice({...price,[n.id]:e.target.value})}/><button disabled={!contract||busy||n.creator.toLowerCase()!==account.toLowerCase()} onClick={()=>list(n.id)}>List for sale</button></div></article>)}</div>}
