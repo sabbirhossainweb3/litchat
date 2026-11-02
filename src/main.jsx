@@ -1,79 +1,71 @@
 import React,{useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {ethers} from 'ethers';
-import {MessageCircle,Users,Store,Plus,Wallet,Globe,ImagePlus,ArrowUpRight,RefreshCw} from 'lucide-react';
+import {Home,ImagePlus,Store,GalleryVerticalEnd,Activity,Wallet,Plus,ArrowUpRight,RefreshCw,Compass,Flame,Menu,X,ExternalLink,ShieldCheck,Sparkles} from 'lucide-react';
 import './style.css';
 
 const CHAIN={chainId:'0x1159',chainName:'LitVM LiteForge',nativeCurrency:{name:'zkLTC',symbol:'zkLTC',decimals:18},rpcUrls:['https://liteforge.rpc.caldera.xyz/http'],blockExplorerUrls:['https://liteforge.explorer.caldera.xyz']};
-const ABI=[
-'function communityCount() view returns(uint256)','function communities(uint256) view returns(address creator,string name,string description,uint256 members)',
-'function createCommunity(string name,string description)','function joinCommunity(uint256 id)',
-'function nftCount() view returns(uint256)','function nfts(uint256) view returns(address creator,string name,string uri)',
-'function mintNFT(string name,string uri)','function listingCount() view returns(uint256)',
-'function listings(uint256) view returns(uint256 nftId,address seller,uint256 price,bool active)',
-'function listNFT(uint256 nftId,uint256 priceWei)','function buyNFT(uint256 listingId) payable','function cancelListing(uint256 listingId)'
-];
-const addr=import.meta.env.VITE_LITCHAT_CONTRACT_ADDRESS;
+const CONTRACT_ADDRESS=import.meta.env.VITE_LITVERSE_NFT_CONTRACT_ADDRESS||'';
 const short=a=>a?`${a.slice(0,6)}...${a.slice(-4)}`:'';
+const tabs=[['Home',Home],['NFT Studio',ImagePlus],['Marketplace',Store],['My NFTs',GalleryVerticalEnd],['Collection',Compass],['Activity',Activity]];
 function App(){
- const [account,setAccount]=useState(''),[contract,setContract]=useState(null),[provider,setProvider]=useState(null);
- const [tab,setTab]=useState('Communities'),[communities,setCommunities]=useState([]),[nfts,setNfts]=useState([]),[listings,setListings]=useState([]);
- const [busy,setBusy]=useState(false),[notice,setNotice]=useState('Connect MetaMask to use LitChat on LitVM LiteForge.');
- const [cName,setCName]=useState(''),[cDesc,setCDesc]=useState('');
- const [nName,setNName]=useState(''),[nUri,setNUri]=useState(''),[imagePreview,setImagePreview]=useState(''),[imageFile,setImageFile]=useState(null);
- const [price,setPrice]=useState({});
+ const [account,setAccount]=useState(''),[provider,setProvider]=useState(null),[contract,setContract]=useState(null);
+ const [tab,setTab]=useState('Home'),[mobileMenu,setMobileMenu]=useState(false);
+ const [nfts,setNfts]=useState([]),[listings,setListings]=useState([]);
+ const [busy,setBusy]=useState(false),[notice,setNotice]=useState('Connect your wallet to explore LitVerse on LitVM LiteForge Testnet.');
+ const [name,setName]=useState(''),[description,setDescription]=useState(''),[imageUrl,setImageUrl]=useState(''),[preview,setPreview]=useState('');
+ const [supply,setSupply]=useState('100'),[price,setPrice]=useState('0.1'),[start,setStart]=useState(''),[end,setEnd]=useState('');
+ const [localFile,setLocalFile]=useState(null),[listingPrices,setListingPrices]=useState({});
+ const [likes,setLikes]=useState({});
  async function connect(){
   try{
-   if(!window.ethereum) return setNotice('MetaMask not found. Please install MetaMask.');
-   const p=new ethers.BrowserProvider(window.ethereum); await p.send('eth_requestAccounts',[]);
+   if(!window.ethereum){setNotice('MetaMask not found. Please install MetaMask.');return;}
+   const p=new ethers.BrowserProvider(window.ethereum);await p.send('eth_requestAccounts',[]);
    try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:CHAIN.chainId}]})}
-   catch(e){if(e.code===4902) await window.ethereum.request({method:'wallet_addEthereumChain',params:[CHAIN]}); else throw e;}
+   catch(e){if(e.code===4902)await window.ethereum.request({method:'wallet_addEthereumChain',params:[CHAIN]});else throw e;}
    const signer=await p.getSigner(),a=await signer.getAddress();setProvider(p);setAccount(a);
-   if(addr && addr.startsWith('0x')) setContract(new ethers.Contract(addr,ABI,signer));
-   setNotice(addr?'Wallet connected.':'Wallet connected — add contract address in .env to enable on-chain features.');
-  }catch(e){setNotice(e.shortMessage||e.message||'Connection failed');}
+   if(CONTRACT_ADDRESS) setNotice('Wallet connected. Contract integration will activate after the new LitVerse contract is deployed and configured.');
+   else setNotice('Wallet connected to LitVM Testnet. Contract address will be added after deployment.');
+  }catch(e){setNotice(e.shortMessage||e.message||'Wallet connection failed');}
  }
- async function load(){
-  if(!contract)return;
-  try{
-   const [cc,nc,lc]=await Promise.all([contract.communityCount(),contract.nftCount(),contract.listingCount()]);
-   let C=[],N=[],L=[];
-   for(let i=0;i<Number(cc);i++){let x=await contract.communities(i);C.push({id:i,creator:x.creator,name:x.name,description:x.description,members:x.members.toString()});}
-   for(let i=0;i<Number(nc);i++){let x=await contract.nfts(i);N.push({id:i,creator:x.creator,name:x.name,uri:x.uri});}
-   for(let i=0;i<Number(lc);i++){let x=await contract.listings(i);if(x.active)L.push({id:i,nftId:Number(x.nftId),seller:x.seller,price:x.price});}
-   setCommunities(C);setNfts(N);setListings(L);
-  }catch(e){setNotice('Could not load contract data: '+(e.shortMessage||e.message));}
+ function chooseImage(e){
+  const f=e.target.files?.[0];if(!f)return;
+  if(!f.type.startsWith('image/')){setNotice('Please select an image file.');return;}
+  setLocalFile(f);const reader=new FileReader();reader.onload=()=>setPreview(String(reader.result));reader.readAsDataURL(f);
  }
- useEffect(()=>{load()},[contract]);
- async function tx(action){try{setBusy(true);setNotice('Please confirm the transaction in MetaMask…');await action();setNotice('Transaction confirmed!');await load();}catch(e){setNotice(e.shortMessage||e.reason||e.message||'Transaction failed');}finally{setBusy(false)}}
- const create=()=>tx(async()=>{if(!cName.trim())throw Error('Enter a community name');await (await contract.createCommunity(cName,cDesc)).wait();setCName('');setCDesc('');});
- const join=id=>tx(async()=>await (await contract.joinCommunity(id)).wait());
- const chooseImage=e=>{
-  const file=e.target.files?.[0];
-  if(!file)return;
-  if(!file.type.startsWith('image/')){setNotice('Please select a valid image file.');return;}
-  setImageFile(file);
-  const reader=new FileReader();
-  reader.onload=()=>setImagePreview(String(reader.result||''));
-  reader.readAsDataURL(file);
-};
- const mint=()=>tx(async()=>{
-  if(!nName.trim()||!nUri.trim())throw Error('Enter NFT name and a public image/IPFS URI');
-  await (await contract.mintNFT(nName,nUri)).wait();
-  setNName('');setNUri('');setImagePreview('');setImageFile(null);
-});
- const list=id=>tx(async()=>{if(!price[id]||Number(price[id])<=0)throw Error('Enter a price in zkLTC');await (await contract.listNFT(id,ethers.parseEther(price[id]))).wait();});
- const buy=id=>tx(async()=>{let l=listings.find(x=>x.id===id);await (await contract.buyNFT(id,{value:l.price})).wait();});
- const cancel=id=>tx(async()=>await (await contract.cancelListing(id)).wait());
- return <div className="app"><header><div className="brand"><div className="logo"><MessageCircle/></div><span>Lit<span className="accent">Chat</span></span><small>COMMUNITY · COLLECT · TRADE</small></div><nav>{['Communities','NFT Studio','Marketplace'].map(t=><button className={tab===t?'active':''} onClick={()=>setTab(t)} key={t}>{t==='Communities'?<Users/>:t==='NFT Studio'?<ImagePlus/>:<Store/>}{t}</button>)}</nav><button className="wallet" onClick={connect}><Wallet size={17}/>{account?short(account):'Connect Wallet'}</button></header>
- <div className="hero"><div className="eyebrow"><span className="pulse"/> BUILT ON LITVM LITEFORGE</div><h1>Where communities<br/><em>become culture.</em></h1><p>Gather around ideas. Create digital collectibles. Trade on-chain.</p><div className="hero-actions"><button className="primary" onClick={()=>setTab('Communities')}>Explore communities <ArrowUpRight size={16}/></button><button className="ghost" onClick={()=>setTab('NFT Studio')}>Create an NFT <Plus size={16}/></button></div><div className="stats"><div><b>{communities.length}</b><span>Communities</span></div><div><b>{nfts.length}</b><span>Collectibles</span></div><div><b>{listings.length}</b><span>Listed items</span></div></div></div>
- <div className="notice">{notice}</div>
- <main><div className="section-head"><div><div className="eyebrow">EXPLORE LITCHAT</div><h2>{tab}</h2></div><button className="refresh" onClick={load}><RefreshCw size={15}/> Refresh</button></div>
- {tab==='Communities'&&<><div className="create-box"><div className="box-title"><Plus/><b>Create a community</b><span>ON-CHAIN</span></div><div className="fields"><input value={cName} onChange={e=>setCName(e.target.value)} placeholder="Community name"/><input value={cDesc} onChange={e=>setCDesc(e.target.value)} placeholder="Short description (optional)"/><button className="primary" disabled={!contract||busy} onClick={create}>Create <ArrowUpRight size={15}/></button></div></div><div className="cards">{communities.map(c=><article className="tile" key={c.id}><div className="tile-icon"><Users/></div><h3>{c.name}</h3><p>{c.description||'A community on LitChat.'}</p><div className="tile-foot"><span>{c.members} members</span><button onClick={()=>join(c.id)} disabled={!contract||busy}>Join <ArrowUpRight size={14}/></button></div></article>)}</div>{!communities.length&&<div className="empty">No communities yet. Be the first to create one ✦</div>}</>}
- {tab==='NFT Studio'&&<div className="create-box studio"><div className="box-title"><ImagePlus/><b>Mint your collectible</b><span>TESTNET</span></div><label>NFT name</label><input value={nName} onChange={e=>setNName(e.target.value)} placeholder="e.g. LitVM Genesis #01"/><label>Choose image from phone or computer</label><input className="file-input" type="file" accept="image/*" onChange={chooseImage}/>{imagePreview&&<div className="image-preview"><img src={imagePreview} alt="Selected NFT artwork preview"/><div><b>{imageFile?.name||'Selected image'}</b><span>{imageFile?`${(imageFile.size/1024).toFixed(0)} KB`:''}</span></div></div>}<label>Public image or IPFS URI</label><input value={nUri} onChange={e=>setNUri(e.target.value)} placeholder="https://... or ipfs://..."/><p className="hint">Preview your selected image here. To show it to everyone in the marketplace, upload it to IPFS or another public image host and paste its public URI above. This app does not upload files to IPFS itself.</p><button className="primary" disabled={!contract||busy} onClick={mint}>Mint NFT <Plus size={16}/></button></div>}
- {tab==='Marketplace'&&<div className="cards">{listings.map(l=>{let n=nfts.find(x=>x.id===l.nftId);return <article className="tile nft" key={l.id}><div className="art">{n?.uri?<img src={n.uri} alt={n.name} onError={e=>e.currentTarget.style.display='none'}/>:<ImagePlus/>}</div><h3>{n?.name||`Collectible #${l.nftId}`}</h3><p>Seller {short(l.seller)}</p><div className="tile-foot"><b>{ethers.formatEther(l.price)} zkLTC</b><button disabled={!contract||busy||l.seller.toLowerCase()===account.toLowerCase()} onClick={()=>buy(l.id)}>Buy</button>{l.seller.toLowerCase()===account.toLowerCase()&&<button className="cancel" onClick={()=>cancel(l.id)}>Cancel</button>}</div></article>})}</div>}
- {tab==='Marketplace'&&!listings.length&&<div className="empty">Nothing listed yet. Mint an NFT, then list it for sale.</div>}
- {tab!=='Marketplace'&&tab!=='Communities'&&<div className="cards">{nfts.map(n=><article className="tile nft" key={n.id}><div className="art">{n.uri?<img src={n.uri} alt={n.name}/>:<ImagePlus/>}</div><h3>{n.name}</h3><p>Creator {short(n.creator)}</p><div className="tile-foot"><input className="price-input" placeholder="Price zkLTC" value={price[n.id]||''} onChange={e=>setPrice({...price,[n.id]:e.target.value})}/><button disabled={!contract||busy||n.creator.toLowerCase()!==account.toLowerCase()} onClick={()=>list(n.id)}>List for sale</button></div></article>)}</div>}
- </main><footer><div className="brand mini"><div className="logo"><MessageCircle/></div><span>Lit<span className="accent">Chat</span></span></div><span>Experimental dApp · LitVM LiteForge Testnet</span><a href="https://liteforge.explorer.caldera.xyz" target="_blank">Explorer <Globe size={14}/></a></footer></div>
+ async function load(){/* New LitVerse contract ABI will be connected after deployment. */}
+ useEffect(()=>{load()},[]);
+ const mock=[{id:'01',name:'Cosmic Voyager',creator:'LitVerse Artist',price:'0.25',image:'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=700&q=80',likes:238},{id:'02',name:'Neon Dreamer',creator:'Digital Soul',price:'0.18',image:'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=700&q=80',likes:194},{id:'03',name:'Pixel Genesis',creator:'0x8d...a12f',price:'0.32',image:'https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?auto=format&fit=crop&w=700&q=80',likes:167},{id:'04',name:'Ethereal Bloom',creator:'Art by Mira',price:'0.15',image:'https://images.unsplash.com/photo-1577083552431-6e5fd01aa6f0?auto=format&fit=crop&w=700&q=80',likes:132}];
+ const mint=()=>setNotice('NFT minting will be enabled after the new LitVerse ERC-721 contract is deployed and connected. Your image preview is ready.');
+ const shown=tab==='My NFTs'?nfts:tab==='Marketplace'?listings:mock;
+ return <div className="lv-app">
+  <header className="lv-header">
+   <button className="lv-brand" onClick={()=>setTab('Home')}><span className="lv-logo"><Sparkles/></span><span><b>LitVerse</b><small>CREATE · MINT · TRADE</small></span></button>
+   <button className="lv-menu" onClick={()=>setMobileMenu(!mobileMenu)}>{mobileMenu?<X/>:<Menu/>}</button>
+   <nav className={mobileMenu?'lv-nav open':'lv-nav'}>{tabs.map(([t,Icon])=><button key={t} className={tab===t?'selected':''} onClick={()=>{setTab(t);setMobileMenu(false)}}><Icon size={16}/>{t}</button>)}</nav>
+   <div className="lv-header-right"><span className="network"><i/> LiteForge Testnet</span><button className="lv-wallet" onClick={connect}><Wallet size={16}/>{account?short(account):'Connect Wallet'}</button></div>
+  </header>
+  {tab==='Home'&&<section className="lv-hero">
+   <div className="hero-copy"><div className="lv-pill"><i/> NEXT-GEN NFT ECOSYSTEM</div><h1>Your universe of<br/><em>digital assets.</em></h1><p>Create, mint, collect and trade unique digital art in the LitVM ecosystem. A new world of creativity starts here.</p><div className="hero-ctas"><button className="lv-primary" onClick={()=>setTab('Marketplace')}>Explore marketplace <ArrowUpRight size={17}/></button><button className="lv-secondary" onClick={()=>setTab('NFT Studio')}><Plus size={16}/> Create NFT</button></div><div className="hero-trust"><span><ShieldCheck size={15}/> Built on LitVM</span><span><Sparkles size={15}/> Creator-first</span></div></div>
+   <div className="hero-art"><div className="art-glow"/><img src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=900&q=85" alt="Featured digital collectible"/><div className="art-float top">✦ <span>GENESIS COLLECTION</span></div><div className="art-float bottom"><span className="mini-avatar">◈</span><div><b>Cosmic Voyager</b><small>Featured collectible</small></div><strong>0.25 zkLTC</strong></div></div>
+   <div className="lv-stats"><div><b>{nfts.length||'12.5K+'}</b><span>Total NFTs</span></div><div><b>{'3.2K+'}</b><span>Collectors</span></div><div><b>{'85.7K'}</b><span>Volume (zkLTC)</span></div><div><b>{listings.length||'2.5K+'}</b><span>Total sales</span></div></div>
+  </section>}
+  <div className="lv-notice">{notice}</div>
+  <main className="lv-main">
+   <div className="lv-section-heading"><div><span className="lv-overline">{tab==='Home'?'DISCOVER THE UNIVERSE':'LITVERSE ECOSYSTEM'}</span><h2>{tab==='Home'?'Trending NFTs':tab}</h2><p>{tab==='Home'?'Explore hand-picked digital collectibles from creators.':'Discover, create and collect on LitVerse.'}</p></div><button className="lv-refresh" onClick={load}><RefreshCw size={15}/> Refresh</button></div>
+   {tab==='NFT Studio'&&<section className="mint-layout"><div className="mint-form"><div className="form-heading"><span className="form-icon"><ImagePlus/></span><div><b>Create your collectible</b><small>Bring your imagination on-chain</small></div><span className="test-badge">TESTNET</span></div>
+    <label>NFT Name</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. LitVerse Genesis #001"/>
+    <label>Description</label><textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Tell the story behind your NFT"/>
+    <label>Artwork</label><div className="upload-zone">{preview?<img src={preview} alt="NFT preview"/>:<div className="upload-empty"><ImagePlus/><b>Upload your artwork</b><small>PNG, JPG, GIF, WEBP</small></div>}<input type="file" accept="image/*" onChange={chooseImage}/><span className="upload-hint">{localFile?localFile.name:'Click to browse files from your device'}</span></div>
+    <label>Image / Metadata URI (IPFS)</label><input value={imageUrl} onChange={e=>setImageUrl(e.target.value)} placeholder="ipfs://... (required for on-chain mint)"/>
+    <div className="two-fields"><div><label>Maximum Supply</label><input type="number" min="1" value={supply} onChange={e=>setSupply(e.target.value)}/></div><div><label>Mint Price (zkLTC)</label><input type="number" min="0" step="0.001" value={price} onChange={e=>setPrice(e.target.value)}/></div></div>
+    <div className="two-fields"><div><label>Mint Start</label><input type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/></div><div><label>Mint End</label><input type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)}/></div></div>
+    <div className="mint-note">⚡ This is a UI preview. On-chain minting activates after the LitVerse contract is deployed.</div><button className="lv-primary wide" onClick={mint} disabled={busy}>Preview Mint Setup <ArrowUpRight size={16}/></button>
+   </div><aside className="mint-preview"><span className="lv-overline">LIVE PREVIEW</span><div className="preview-art">{preview?<img src={preview} alt="Preview"/>:<Sparkles/>}<span>#{String(supply||'001').padStart(3,'0')}</span></div><h3>{name||'Your NFT Name'}</h3><p>{description||'Your collectible description will appear here.'}</p><div className="preview-meta"><span>Maximum supply</span><b>{supply||'—'}</b></div><div className="preview-meta"><span>Mint price</span><b>{price||'0'} zkLTC</b></div><div className="preview-meta"><span>Royalty</span><b>5%</b></div><div className="preview-meta"><span>Network</span><b>LitVM Testnet</b></div></aside></section>}
+   {(tab==='Home'||tab==='Marketplace'||tab==='Collection'||tab==='My NFTs')&&<div className="lv-nft-grid">{shown.map((n,i)=><article className="lv-nft-card" key={n.id||i}><div className="nft-image"><img src={n.image||n.uri||'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=700&q=80'} alt={n.name||'LitVerse NFT'}/><span className="nft-number">#{n.id||String(i+1).padStart(3,'0')}</span><button className="like-btn" onClick={()=>setLikes({...likes,[n.id||i]:!likes[n.id||i]})}>{likes[n.id||i]?'♥':'♡'} <small>{n.likes||'128'}</small></button></div><div className="nft-card-info"><div><h3>{n.name||'Collectible'}</h3><small>by {n.creator||short(n.creator)}</small></div><div className="nft-price"><small>PRICE</small><b>{n.price||'0.25'} <span>zkLTC</span></b></div></div><div className="nft-card-bottom"><span><i className="coin">L</i> LitVerse</span><button onClick={()=>setTab('Marketplace')}>Explore <ArrowUpRight size={14}/></button></div></article>)}</div>}
+   {tab==='Activity'&&<div className="empty-state"><Activity/><h3>Activity feed</h3><p>Mint, listing and sale events will appear here once the new contract is connected.</p></div>}
+  </main>
+  <footer className="lv-footer"><div className="footer-brand"><span className="lv-logo"><Sparkles/></span><b>LitVerse</b></div><span>Experimental NFT ecosystem · LitVM LiteForge Testnet</span><a href="https://liteforge.explorer.caldera.xyz" target="_blank" rel="noreferrer">Explorer <ExternalLink size={13}/></a></footer>
+ </div>
 }
 createRoot(document.getElementById('root')).render(<App/>);
